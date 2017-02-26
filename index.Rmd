@@ -19,7 +19,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 <style>
 body{
-  font-size: 13pt;
+  font-size: 14pt;
 }
 </style>
 
@@ -31,13 +31,16 @@ body{
 
 # Miss finland competition
 
-Miss Finland is a beuty contest held annually in Finalnd. During the spring of 2016, as the head of news for the tyyppiarvo.com magazine, I presented an open challenge to forecast the winner of the Miss Finland 2016 competition using statistical analysis. 
+Miss Finland is a beauty contest held annually in Finland. During the spring of 2016, as the head of news for the tyyppiarvo.com magazine, I presented an open challenge to forecast the winner of the competition using statistical analysis. 
 
-Earlier during the spring, the whole editorial staff and other volunteers involved with tyyppiarvo.com had gone through a tremendous effort of collecting and editing pictures of past competotitors to enable to competition. 
+Earlier during the spring, the whole editorial staff and other volunteers involved with tyyppiarvo.com had gone through a tremendous effort of collecting and editing pictures of past competotitors to enable to competition. Specially the following people deserve thanks: 
 
-**Joni Oksanen** provided a template to make it easier to modify the pictures to be as similar to each other as possible. **Tommi Mäklin** went trough the trouble of finding suitable R functions to transform the pictures to machine-readable numerical vectors, and also provided some helpful plotting functions. We also received help from **Mika Sutela**, a researcher at the University of Eastern Finland, who had access to a dataset of measurements and demograpchic information of past competitors.
+- **Joni Oksanen** provided a template to make it easier to modify the pictures to be as similar to each other as possible.
+- **Tommi Mäklin** went trough the trouble of finding suitable R functions to transform the pictures to machine-readable numerical vectors, and also provided some helpful plotting functions. We also received help from
+- **Mika Sutela**, a researcher at the University of Eastern Finland, who had access to a dataset of measurements and demograpchic information of past competitors.
+- Everyone who helped collect the data
 
-I then combined these two data to form a competition dataset, which included both the demographic and past competition results, as well as pictures of the competitors faces. The data also included information on the competitors of the not yet held Mis Finland 2016.
+I combined the two data set to form a competition data, which included both the demographic and past competition results, as well as pictures of the competitors faces. The data also included information on the competitors of the not yet held Mis Finland 2016.
 
 In this page I will introduce and explain my own solution and submission to the competition, which ended up being the winning submission.  
 
@@ -56,7 +59,7 @@ My solution involved the following steps:
 
 **3 Use regularized logistic regression to learn a predictive statistical model**
 
-- Logistic regression is a form of generalized linear regression where the goal is to learn a linear model to predict the probabilities of a binary outcome. Even after PCA the data still had more features than observations thought, which will usually result in overfitting on the training data. 
+- Logistic regression is a form of generalized linear regression where the goal is to learn a linear model to predict the probabilities of a binary outcome. Even after PCA the data still had more features than observations though, which will usually result in overfitting on the training data. 
 - I chose to use *regularization* to further reduce the number of predictors in the regression model. Regularisation essentially forces some of the weights of the predictors to zero, removing their effect from the model. This can help to fight overfitting.
 
 **4 Do cross-validation with multiple models and form an essamble from the best performing ones**
