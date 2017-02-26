@@ -60,6 +60,7 @@ drawFace <- function(face, newdev=F, main = rownames(face)) {
   m<- matrix(m, dim, dim)
   m <- t(m[dim:1, ])
   if(newdev) dev.new()
+  par(mar = c(0,0.5,2,0))
   image(m, col=grey(seq(0, 1, length=256)), main=main, cex.main = 0.8)
 }
 
@@ -73,7 +74,7 @@ drawMultipleFaces <- function(faces, dev = NULL, titles = rownames(faces), cex =
   nfaces <- nrow(faces)
   pardim <- ceiling(sqrt(nfaces))
   if(!is.null(dev)) dev()
-  temp_par <- par(mfrow=c(pardim,pardim), yaxt="n", xaxt="n",  mar=c(0,0.5,2,0), cex = cex)
+  temp_par <- par(mfrow=c(pardim,pardim), yaxt="n", xaxt="n", cex = cex)
   i <- 1
   for(i in 1:nfaces) {
     drawFace(faces[i,],main=titles[i])
