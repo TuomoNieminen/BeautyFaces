@@ -141,8 +141,12 @@ cross_validate <- function(data, PC, cost, facedim, type=6, target="Kolme") {
 fit_l1_logreg <- function(tr_data, PC, costs, facedims, target_data, target="Kolme") {
   nwinners <- ifelse(target=="Kolme",3,1)
   Y <- tr_data[[target]]
-  X <- tr_data[,c(2,8:18)]
+  X <- tr_data[,c(2,8:18), drop = F]
   X_ <- target_data[,c(2,8:18)]
+  
+  W <- matrix(0, ncol = ncol(X) + max(facedims) + 1, nrow = length(costs)) 
+  colnames(W) <-  c(colnames(X), paste("PC", 1:max(facedims)), "bias")
+  i <- 0
   
   probs <- mapply(function(c,fd) {
     V <- PC[,1:fd, drop = F]
@@ -150,11 +154,12 @@ fit_l1_logreg <- function(tr_data, PC, costs, facedims, target_data, target="Kol
     X_tr <- as.matrix(cbind(X, faces))
     fit <- LiblineaR(data = X_tr, target = Y, type=6, 
                      cost = c, wi = c("0" = (10 - nwinners) / 10, "1" = nwinners/10))
-    
+    W[(i <- i + 1), 1:length(fit$W)] <<- fit$W
+
     target_faces <- as.matrix(target_data[,19:ncol(target_data)]) %*% V
     X_target <- cbind(X_, target_faces)
     pred <- predict(fit, newx = as.matrix(X_target), proba = T)
     pred$probabilities[,2]
   }, costs, facedims)
-  probs
+  return(list(weights = W, probs = probs))
 }
