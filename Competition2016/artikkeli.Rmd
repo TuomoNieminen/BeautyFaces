@@ -1,0 +1,60 @@
+---
+title: "Kauneuskilpailun ennustaminen nykyaikaisilla tilastollisilla menetelmillä"
+author: "Tuomo Nieminen 012843475"
+date: "25 heinäkuuta 2016"
+output: html_document
+---
+
+### otsikko1
+
+*Tyyppiarvo esitti keväällä 2016 avoimen haasteen, jossa tavoitteena oli ennustaa Miss Suomi kilpailun kolmen kärki ja voittaja. Haastetta varten tyyppiarvon toimitus keräsi kasaan kattavan missitietokannan, joka avattiin yleisölle kahta viikkoa ennen vuoden 2016 kilpailun ratkeamista. Tämä artikkeli kertoo, kuinka haasteen voittanut ennuste rakentui.*  
+
+Tyyppiarvon missiennustushaaste tarjosi huikean tilaisuudeen päästä soveltamaan nykyaikaisia tilastollisia menetelmiä. Tarjolla oli uniikki aineisto kauneuskilpailijoiden kasvokuvia ja menneiden kilpaluiden tuloksia. 
+
+Digitaaliset kuvat ovat yksi esimerkki kenties hieman yllättävästä numeerisen datan lähteestä. Kuvat esitetään yleensä nelikulmiona ja ne koostuvat pienistä pisteistä, joiden väri voidaan yksinkertaisimmassa tapauksissa kuvata yhdellä numerolla, värikuvan tapauksessa kolmella numerolla (RGB).  
+
+Tyyppiarvon kevään 2016 missihaaste sisälsi toimituksen keräämiä tietoa edellisten ja nykyisen vuoden kilpailijoista 64x64 harmaansävykuvina. Suhteellisen heikosta resoluutiosta huolimatta kuvat tarjosivat todella suuren määrän numeerista informaatiota jokaisesta kilpailijasta, sillä kuvien myötä jokaiseen kilpailijaan liittyi 64x64 = 4096 muuttujaa. Näiden lisäksi haasteen mukana toimitettuun datasettiin kuului tietoja kilpalijoiden kriittisistä mitoista, iästä ja asuinpaikasta - kymmenisen muuttujaa lisää. Varsinainen kiinnostuksen kohde, eli kilpailijoiden sijoitukset, löytyi tietysti myös. 
+
+Perinteiset tilastolliset menetelmät on lähtökohtaisesti suunniteltu tilanteisiin, joissa havaintoyksiköitä (kilpailija) on suhteellisen pieni määrä ja muuttujia vielä vähemmän. Havaintoyksiköiden määrän kasvaminen  ei useimmiten aiheuta ongelmia (päinvastoin), mutta muuttujien määrän kasvaminen on yleensä ongelma. Yleisimmin käytössä olevat menetelmät eivät ole suunniteltu tilanteisiin, joissa muuttujien lukumäärä on lähellä havaintojen lukumäärää, saati sitten suurempi. Missihaastessa havaintoja oli vain kymmeniä ja muuttujia yli neljä tuhatta. Hyvän ennustuksen tekemiseen tarvittiin luovia ja nykyaikaisia ratkaisuja.  
+
+Miksi muuttujien suuri määrä sitten on ongelma ja mikä on perinteisten menetelmien heikkous? Voisi sanoa, että se on ahneus. Käytetyimmät menetelmät on suunniteltu maksimoimaan selittämisvoima niille syötetyn havaintoaineiston suhteen. Tämä kuulostaa tietenkin lähtökohtaisesti hyvältä. Mutta silloin kun muuttujia - eli mahdollisia selittäjiä - on paljon, muodostuu ongelmaksi ylimallintaminen (overfitting). 
+
+Melkein kaikki tilastolliset ennusteet perustuvat lineaarisen mallin ajatukseen: $y = a + x_1 \cdot w_1 + .. + x_k \cdot b_k$. Selittäjiä $x_i$ kerrotaan sopivilla painoilla $w_i$ ja muuttujien painotetusta summasta muodostuva suora kuvaa yhteyttä selitettävän muuttujan $y$ odotusarvoon. Mallin etsiminen (sovittaminen) on yksinkertaisesi parhaimpien painojen $w_i$ ratkaisemista niin, että malli tekee keskimäärin mahdollisimman pieniä virheitä, eli ennustaa lähelle todellisia havaintoja $y$.  
+
+Tällaisen suoran etsiminen saattaa kuulostaa yksinkertaiselta tai rajoittavalta, mutta todellisuudessa mahdollistaa vaikka mitä, sillä yleisemmässä muodossa selittäjien $x$ tilalla voidaan käyttää mitä tahansa muunnosta $f(x)$, jolloin malli onkin selittäjien $x$ suhteen vaikka kuinka kurvikas. Tästä syystä villeimmät ja seksikkäimmätkin nykyajan tilastotieteen menetelmät, kuten vaikkapa neuroverkot, ovat loppujen lopuksi muunnelmia lineaarisesta mallista.  
+
+Niin mikä ylimallintaminen? Yksinkertaisin esimerkki ylimallintamisesta saadaan polynomiregression avulla. Olkoon malli $y = a + x^1 \cdot w_1 + x^2 \cdot w_2 + ... + x^d \cdot w_d$, jossa sekä $y$, että $x$ koostuvat useasta elementistä (havainnoista ja niihin liittyvistä muuttujista). Kun $d=1$, eli malli on $x$ suhteen suora, saadaan suora $a + x^1 \cdot w_1$ kulkemaan minkä tahansa kahden $y$ pisteen kautta valitsemalla $a$ ja $w_1$ sopivasti. Malli siis voidaan valita selittämään kahta havaintoa täydellisesti. Kun $d=2$ saadaan taas parabeli $a + x^1 \cdot w_1 + x^2 \cdot w_2$ kulkemaan minkä tahansa kolmen pisteen kautta valitsemalla $a, w_1 ja w_2$ sopivasti.  
+
+Vastaava pätee aina eteenpäin. Valitsemalla riittävän monimutkainen malli, kuten esimerkiksi polynomi jonka aste on yksi vähemmän kuin havaintojen lukumäärä, voidaan havainnot selittää täydellisesti muuttujien $x$ avulla. Havaintojen selittäminen täydellisesti on ennusteita tehtäessä yleensä aina huono asia silloin, kun havaintoihin liittyy oletettavasti satunnaisvaihtelua. Ilmiötä, johon liiitty satunnaisuutta, ei lähtökohtaisesti voida täydellisesti ennustaa, joten pyrkimys luoda täydellisesti ennustava malli on tuomittu epäonnistumaan. Tästä johtuen monimutkaisempi, havaintoja yhä paremmin selittävä malli onkin jonkun rajan jälkeen huonompi, kuin yksinkertaisempi malli. Liian monimukainen malli ylimallintaa havainnot.  
+
+Missikilpailussa tavoitteena oli käyttää hyväksi menneiden ja nykyisen vuoden kilpailijoiden kuvia ja muita tietoja ja ennustaa kolmen kärki ja voittaja. Yksi tapa lähestyä asiaa on muodostaa jokaiselle kilpailijalle todennäköisyys päästä kolmen parhaan joukkoon. Tällaisen ongelman ratkaisemiseksi käytetään perinteisesti logistista regressiota, joka on paljon käytetty sovellus lineaarisesta mallista. Logistisen regression avulla voidaan tuottaa halutut todennäköisyydet kuulua yhteen kahdesta luokasta. 
+
+Edellä mainituista ongelmista johtuen menetelmää ei kuitenkaan voinut suoraan soveltaa missiaineistoon. Mahdollisia selittäjiä oli aivan liikaa; malli saattaisi esimerkiksi todeta, että musta piste kuvakoordinaatissa (5,10) merkitsee varmaa voittoa. Liian monen selittäjän ongelman pystyi kuitenkin missikilpailun tapauksessa ratkaisemaan neljässä vaiheessa:
+
+1. Tiivistetään missikuvien olennainen informaatio pienempään ulottuvuuteen.
+2. Muodostetaan logistinen regressiomalli, mutta pakotetaan osa selittäjien painoista nollaan, poistaen selittäjät mallista.
+3. Tehdään vaiheet 1-2 usealla eri tavalla ja valitaan parhaat 20%.
+4. Keskiarvoistetaan parhaiden mallien tuottamat ennusteet.
+
+Vaihe yksi suoritettiin tekemällä pääkomponenttianalyysi (principal component analysis, PCA). Tämä on lineaarialgebran menetelmä, jossa matriisi hajoitetaan osiin, jotka voidaan sitten järjestää tärkeyden mukaan ja valita tärkeimmät. Ohessa erilaisia PCA esityksia voittaja Shirly Karvisen kuvasta.
+
+<shirly kuva>
+*Kuvassa Miss Suomi 2016 Shirly Karvinen esitettynä missikuvien pääkomponenttien avulla. Vasemmalla ylhäällä alkuperäinen kuva, sitten Shirly esitettynä 85, 25 ja 5 pääkomponentin avulla. 85 (4096 mahdollisesta) pääkomponenttia selitti 99% kuvien varianssista.*  
+
+Vaihe kaksi suoritettiin sovittamalla logistinen regressiomalli käyttäen l1 regularisaatioa. Tässä menetelmässä sopivat painot $w$ etsitään sillä lisäyksellä, että nollasta poikkeavien painojen käytöstä rangaistaan. Täten suositaan yksinkertaisempia malleja.  
+
+Kolmannessa vaiheesa parhaat mallit valittiin yksi-pois ristiinarvioinnin avulla (leave-one-out cross-validation). Ristiinarviointi on ehkäpä yksi tärkeimmistä menetelmistä, mitä tietojenkäsittelyn puolelta on tuotu mukaan tilastotieteen piiriin. Ideana on arvioida mallin hyvyys sen perusteella, miten hyvin se kykenee ennustamaan tuntematonta aineistoa. Tällöin koko aineistoa ei koskaan käytetä mallin etsimiseen.  
+
+Yksi-pois -menetelmässä jätetään aina vuorolla yksi havainnoista pois ja arvioidaan, kuinka hyvin muiden havaintojen pohjalta etsitty malli ennustaa pois jätettyä havaintoa. Näin voidaan arvioida erilaisten mallien hyvyyttä hyvin konreettisesti.  
+
+Neljännessä vaiheessa parhaiden mallien ennusteet yhdistettiin. Tätä sanotaan ensemblen muodostamiseksi. Yleensä tämä tarkoittaa usean erilaisen mallin tulosten yhdistämistä keskiarvoistamalla mallien ennusteet. Tässä tapauksessa keskiarvoistettiin usean samankaltaisen mallin tulokset.  
+
+Lopulta näiden vaiheiden jälkeen malli antoi ennusteeksi kuvan osoittamat todennäköisyydet kolmen parhaan joukkoon. Todennäköisimmät voittajaehdokkaat olivat mallin mukaan Jenna Ruohola, Emilia Seppänen ja Shirly Karvinen. Kaksi näistä pääsikin kolmen parhaan joukkoon.  
+
+<kuva top3_preds.jpg>
+*Vuoden 2016 Miss Suomi -kilpailijoiden top3 todennäköisyydet l1 regularisoitujen logististen regressiomallien ensemblen mukaan.*  
+
+Malli ennusti siis 2/3 top3 -kilpailijasta oikein, mikä olisi arvaamalla harvinaista. Onkin vaikeaa uskoa, että tilastollinen malli kykenisi juurikaan parempaan keskimääräiseen tarkkuuteen. Todennäköisesti loppujen lopuksi missikilpailussa muillakin tekijöillä, kuin ulkonäöllä on merkitystä.  
+
+
+
