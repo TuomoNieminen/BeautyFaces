@@ -1,0 +1,59 @@
+# Reading Miss Finland data into R
+# tuomo.a.nieminen@helsinki.fi
+# 4.5.2016
+
+# load data
+missdata <- read.csv("challenge_data.csv", 
+                     encoding="UTF-8", stringsAsFactors = F)
+
+# check dimensions
+NR <- nrow(missdata)
+NC <- ncol(missdata)
+c(rows=NR,columns=NC)
+
+# check first 40 colnames
+names(missdata)[1:40]
+
+
+# plotting functions
+DrawFace <- function(face, newdev=T) {
+  ##Draws the argument face in greyscale.
+  ##
+  ##Args:
+  ##  face: a vector containing the face as a greyscale image.
+  ##  newdev: open a new device?
+  face <- as.numeric(face)
+  dim <- sqrt(length(face))
+  face <- matrix(face, dim, dim)
+  face <- t(face[dim:1, ])
+  if(newdev) X11()
+  image(face, col=grey(seq(0, 1, length=256)))
+}
+DrawMultipleFaces <- function(faces) {
+  
+  # Applies DrawFace() to each row of faces
+  ##Args:
+  ##  faces: a matrix or data frame with greyscale faces as rows.
+  
+  nfaces <- nrow(faces)
+  pardim <- ceiling(sqrt(nfaces))
+  X11()
+  temp_par <- par(mfrow=c(pardim,pardim), mar=c(1,1,1,1))
+  apply(faces,1,DrawFace, newdev=F)
+  
+  par(temp_par)
+}
+
+# visualize a random face
+faces <- missdata[,19:NC]
+randomface <- faces[sample(1:NR,1),]
+DrawFace(randomface)
+
+# visualize the 2016 competitors
+miss2016 <- subset(missdata,year==2016)[,19:NC]
+DrawMultipleFaces(miss2016)
+
+# visualize the average perintöprinsessa (places 2-3)
+PPs <- subset(missdata,PP==1)[,19:NC]
+meanPP <- colSums(PPs)/nrow(PPs)
+DrawFace(meanPP)

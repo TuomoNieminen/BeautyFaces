@@ -1,0 +1,13 @@
+Miss Finland will be crowned on 13.5.2016. Here are the rules for the challenge.
+
+- Produce the following predictions before thursday 12.5.2016 23:59 and send them to tyyppiarvo@gmail.com
+1) The top three competitors
+2) The winner
+
+- Your predictions has to be based on a statistical (or computational) model. If you win, we will require code and a short description of your model.
+
+- Use only the data provided for modelling. You can use additional pictures of the 2016 competitors to compute predictions if you wish.
+
+The winner will be determined by first looking at the accuracy of the 1) task and in case of a tie the 2) task. If there is still a tie the faster submission will win. The winner will get free coffee in Survomo (Exactum CK109) during the next semester!
+
+Use the R_helper.txt (+ missR.R) and python_helper.txt scripts to get started. Good luck!

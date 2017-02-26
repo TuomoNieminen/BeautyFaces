@@ -1,0 +1,323 @@
+---
+title: "Untitled"
+title: "Habits"
+output:
+  html_document:
+    theme: cosmo
+    toc: true
+    toc_float: true
+    fig_caption: true
+    df_print: paged
+---
+
+```{r setup, include=FALSE, results = "hide"}
+knitr::opts_chunk$set(echo = TRUE)
+
+# install.packages("IM")
+# install.packages("LiblineaR")
+```
+
+
+![](top3_prediction.ong)
+
+
+## Miss finland competition
+
+During the spring of 2016, as the head of news for the tyyppiarvo.com magazine, I presented an open challenge to forecast the winner of the Miss Finland 2016 competition using statistical analysis. 
+
+Earlier during the spring, the whole editorial staff and other volunteers involved with tyyppiarvo.com had gone through a tremendous effort of collecting and editing pictures of past competotitors. **Joni Oksanen** provided a template to make it easier to modify the pictures to be as similar to each other as possible. 
+
+**Tommi Mäklin** went trough the trouble of finding a suitable R functions to transform the pictures to machine-readable numerical vectors, and also provided some helpful plotting functions. 
+
+We also received help Mika Sutela, a researcher at the University of Eastern Finland, who had access to a dataset of measurements and demograpchic information of past competitors.
+
+I combined these two data sets to form a competition dataset, which included both the demographic and past competition results, as well as pictures of the competitors faces. The data also included information on the competitors of the not yet held Mis Finland 2016.
+
+I included helper files to get started on loading the competition data to both R and python and to visualize the images. I eventually participated in the competition myself and ended up winning it with a solution that predicted 2/3 of the top three competitions correctly. In this page I will introduce and explain my solution.
+
+## Summary of my solution
+
+My solution involved the following steps
+
+**1 Perform histogram equalisation on the images**
+
+- This was done to reduce the effect of image lighting. I also experimented with binarizing the greyscale images to simple black / white.
+
+**2 Reduce the dimensionality of the data with Principal Components Analysis (PCA)**
+
+- The images can be thought of as long numerical vectors, meaning that there is a huge amount of features describing each competitor. PCA captures the most essential information in a lesser number of features.
+
+**3 Use regularized logistic regression to learn a predictive statistical model**
+
+- Logistic regression is a form of generalized linear regression where the goal is to learn a linear model to predict the probabilities of a binary outcome. Even after PCA the data still had more features than observations thought, which will usually result in overfitting on the training data. 
+- I chose to use *regularization* to further reduce the number of predictors in the regression model. Regularisation essentially forces some of the weights of the predictors to zero, removing their effect from the model. This can help to fight overfitting.
+
+**3 Do cross-validation with multiple models and form an essamble from the best performing ones**
+
+- The regularisation of the previous step can be calibrated. To finnish the model, I chose to do cross-validation to try to find good parameters for the regularisation. I then averaged the predictions of the top 20% performing models to make the final predictions.  
+
+
+## The data
+
+```{r load_data}
+missdata <- read.csv("Data/challenge_data.csv", 
+                     encoding="UTF-8", stringsAsFactors = F)
+
+```
+
+The data is very high dimensional, including both demographic information and the pictures of each competitor. The pictures are greyscale images with 64 x 64 pixels. From a computational point of view, they are essentially matrices. Each entry in the matrix represents the amount of grey in the pixel.  
+
+The pictures can also be represented by a vector of length 64 x 64 = 4096 which is what was done in the data. The data also included 18 other variables (including placements in the Miss finland competition) resulting in 4114 variables total. 
+
+```{r dimensions}
+NR <- nrow(missdata)
+NC <- ncol(missdata)
+c(rows=NR,columns=NC)
+```
+
+```{r}
+names(missdata)[1:18]
+```
+
+Explanations of all the variables is below:
+
+- Miss = Winner Miss Finland (1="yes", 0="no")
+- PP = placed 2-3 (1="yes", 0="no")
+- Kolme = placed in top three
+- Lehd = Press choice
+- Yleiso = Crowd favourite
+- Ika = Age
+- Pituus = Height
+- Paino = Weight
+- Rinta = Chest
+- Vyötärö = Waist
+- Lantio = Hips
+- Hius = blond/brunette (0 = brunette, 1=blond)
+- AsuinP = Location of recidence (0=E-Suomi, 1=K-Suomi, 2=P-Suomi)
+- Nro = Competition number (0=1-5, 1=6-10)
+- Turku = From Turku (1="yes", 0="no")
+- Hki = From Helsinki (1="yes", 0="no")
+- V1 - V4096 = A flattened greyscale picture matrix of the contestents face (64x64). Each variable denotes the amount of grey in a single pixel.
+
+The data also includes the 2016 competitors for whom naturally some of the data was missing. 
+
+# Exploring the data
+
+This analysis uses the following R libraries. The missR function can be found in my GitHub repository related to this page.
+
+```{r, message = F}
+library(LiblineaR)
+source("missR.R")
+library(IM)
+library(dplyr)
+```
+
+The columns 19:4114 include the pictures. 
+
+```{r}
+# faces
+rownames(missdata) <- paste0(missdata$name, " (",missdata$year,")")
+faces <- as.matrix(missdata[,19:NC, drop = F])
+```
+
+The drawFace function draws a face represented by a vector. It is a wrapper for `image()` in R. Let's look at an example face chosen by random: 
+
+```{r randomface, fig.cap = "A randomly selected face from the competition data"}
+randomface <- faces[sample(1:NR,1),, drop = F]
+drawFace(randomface)
+```
+
+We can also visualize all of the 2016 competitors
+
+```{r competitors2016, fig.cap = "The 2016 Miss Finland competitors"}
+# visualize the 2016 competitors
+miss2016 <- faces[missdata$year==2016,,drop = F]
+drawMultipleFaces(miss2016)
+```
+
+
+We can also do fun things such as draw some average faces. It is quite straightforward to compute a simple average of the face vectors. This allows us to visualize for example an average perintoprinsessa! (placed 2-3 in the competitions).
+
+
+```{r}
+meanface <- function(face_matrix) {
+  colSums(face_matrix) / nrow(face_matrix)
+}
+```
+
+```{r average_perinto, fig.cap = "A visualisation of the average 2-3 place finisher in Miss Finland compatition"}
+# visualize the average perintoprinsessa (places 2-3)
+PPs <- subset(faces, missdata$PP==1)
+meanPP <- meanface(PPs)
+drawFace(meanPP)
+```
+
+The pictures are originally quite similar but if we're going to compare them to each other and do statistical analysis, we should make sure that the competitors are really represented as equally as possible.  
+
+One of the things to concider is the lighting of the pictures. We can perform histogram equalisation to make an effort to nullify the effect of lighting.  
+
+```{r histeq, fig.cap = "A sample of faces after histogram equalisation"}
+# perform histogram equalisation to all images
+eq_faces <- apply(faces,1, IM::histeq)
+eq_faces <- t(round(eq_faces))
+drawSample(eq_faces)
+```
+
+We could also binarize the images by choosing a treshold and simply coding the pictures as "black" and "white". What would that look like?
+
+```{r, binarize, fig.cap = "A sample of binarized Miss Finland competitor faces"}
+#  furthed simplify pics by "binarizing" 
+co <- 130
+bi_faces <- eq_faces
+bi_faces[bi_faces <= co] <- 0
+bi_faces[co < bi_faces] <- 256
+
+drawSample(bi_faces)
+```
+
+That's pretty artsy. 
+
+We could also take a look at some averages again. Here is the average of all the histogram equalised faces.
+
+```{r average_eq, fig.cap = "The average competitor after the histogram equalisation"}
+drawFace(meanface(eq_faces))
+```
+
+
+And here is the average binarised faces.
+
+```{r average_bi, fig.cap = "The average competitor after binarizing the images"}
+drawFace(meanface(bi_faces))
+```
+
+Right now, there are over 4000 variables related to each competitior. That is way too much for predicting. Next, we'll make an effort to reduce the dimensionality of the data.
+
+# Dimensionality reduction with PCA
+
+The `prcomp()` function in the stats package perform Principal Component Analysis (PCA), utilizing the Singular Value Decomposition (SVD). It is a fast algorith an according to my understanding the solution is somewhat approximate. The object returned by the function has a print method which allows us to see the proportions of variance captured by the principal components. 
+
+The summary shows that 86 Principal components are needed to capture 99% of the variance in the original data. 86 is a lot but it is a lot less than 4096!
+
+```{r}
+eq_pca <- prcomp(eq_faces)
+s <- summary(eq_pca)
+t(s$importance)
+```
+
+
+When we have the principal components solution, we can use it as a projection to create a lower dimension representation of any image. We can also do another projection to represent the picture in it's original dimensions but with the more economial principal component solution. 
+
+Let's draw for example a PCA representation of Shirly Karvinen using the 50 first principal components.
+
+```{r}
+PC <- eq_pca$rotation
+shirly <- faces["shirly karvinen (2016)",]
+which <- 1:50
+
+V <- PC[,which]
+pc_shirly <- shirly %*% V
+new_shirly <- pc_shirly %*% t(V)
+
+drawFace(new_shirly)
+```
+
+
+I also wrote some helper functions to perform the above routine and compare the appearance of couple random faces with their lower dimensional representations. We saw from the summary that the first 86 Principal components are enough to capture 99% of the total variance in the data. So, let's start with that.
+
+```{r}
+compare_faces(eq_faces, PC, which = 1:86, n = 2)
+```
+
+To capture about 90% of the total variance we can use the first 50 principal components.
+
+```{r}
+compare_faces(eq_faces, PC, which = 1:50, n = 2)
+```
+
+
+To capture about half of the variace we could use the first 7 PC. It still looks ok.  
+
+```{r}
+compare_faces(eq_faces, PC, which = 1:7, n = 2)
+```
+
+In theory, using all of the principal components gives the original picture. However the prcomp function in R gives an approximate solution to the PCA problem so this is not exactly true. You can write your own function to compute a more exact solution but that is probably pretty slow (see missR.R for a function that does this) .
+
+Next, we'll use logistic regression together with penalization and cross-validation techniques to predict the top 3!
+
+## Penalized logistic regression
+
+
+```{r}
+data <- cbind(missdata[,1:18], eq_faces)
+
+train_data <- subset(data, year < 2016)
+target_data <- subset(data, year == 2016)
+
+```
+
+```{r}
+PC <- eq_pca$rotation
+face_dimensions <- 1:86
+```
+
+I the ran cross validation on the parameter grid to predict the top3/winner of each competition year by using data from other years. The prediction method was l1 regularized logistic regression. 
+
+
+```{r}
+
+# parameter grid for cross validation
+costs <- c(0.01,0.1,1,10,1e2,1e4,1e7)
+
+# returns a matrix containing avarage prct of correct predictions
+# target is either "Miss" for winner predictions, or "Kolme" for top3 predictions
+# winner predictions might not be very reliable since there is so little data
+results <- cross_validate_grid(data = train_data, PC = PC, 
+                               C = costs, FD = face_dimensions, target = "Kolme")
+```
+
+I then checked which models were the top 20% when measured by their accuracy. 
+```{r}
+
+best_predictors <- which(results > quantile(results, probs=0.8), arr.ind = T)
+chosen_costs <- costs[best_predictors[,2]]
+chosen_facedims <- face_dimensions[best_predictors[,1]]
+
+data.frame(cost = chosen_costs, facedims = chosen_facedims, accuracy = results[best_predictors])
+```
+
+
+Then, for each of the best cost + face dimension combinations, I  predicted the 2016 results using l1 regularized losigtic regression. I wrote a wrapper function which uses `LiblineaR::LiblineaR`.
+
+```{r}
+prob_matrix <- fit_l1_logreg(tr_data = train_data, PC = PC, costs = chosen_costs, 
+                            facedims = chosen_facedims, target_data = target_data,
+                            target = "Kolme")
+```
+
+I then averaged the predictions to get the final predictions
+```{r}
+top3prob <- rowMeans(prob_matrix)
+names(top3prob) <- target_data$name
+P <- data.frame(top3prob)
+P[order(-P),, drop = F]
+```
+
+
+We can also now plot the competitions and their top3 percentages: 
+```{r}
+
+pred_labels <- paste0(target_data$name," ", 100*round(top3prob,2),"%")
+faces2016 <- target_data[,19:ncol(target_data)]
+drawMultipleFaces(faces2016, titles = pred_labels, cex = 1.4)
+
+```
+
+```{r, include = F}
+dev <- function() png(file="top3_prediction.png", height = 900, width = 900)
+drawMultipleFaces(faces2016, titles = pred_labels, dev=dev, cex = 1.4)
+dev.off()
+```
+
+2 of those preditions turned out to be correct. Shirly Karvinen won the competition and Emilia Seppänen was in the top 3. The actual top3 also had Heta Sallinen in second place.  
+

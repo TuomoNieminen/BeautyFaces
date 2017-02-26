@@ -1,0 +1,22 @@
+Variables in challenge_data.csv
+
+Miss = Winner Miss Finland (1="yes", 0="no")
+PP = placed 2-3 (1="yes", 0="no")
+Kolme = placed in top three
+Lehd = Press choice
+Yleiso = Crowd favourite
+Ika = Age
+Pituus = Height
+Paino = Weight
+Rinta = Chest
+Vyöt = Waist
+Lantio = Hips
+Hius = blond/brunette (0 = brunette, 1=blond)
+AsuinP = Location of recidence (0=E-Suomi, 1=K-Suomi, 2=P-Suomi)
+Nro = Competition number (0=1-5, 1=6-10)
+Turku = From Turku (1="yes", 0="no")
+Hki = From Helsinki (1="yes", 0="no")
+
+V1 - V4096 = A flattened greyscale picture matrix of the contestents face (64x64). Each variable denotes the amount of grey in a single pixel.
+
+The data also includes the 2016 competitors for whom naturally some data are missing. 

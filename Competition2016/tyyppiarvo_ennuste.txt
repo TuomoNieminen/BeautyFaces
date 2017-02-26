@@ -1,0 +1,26 @@
+Mattias
+
+top3: Shirly Karvinen, Jenna Ruohola, Esmi Valen
+voittaja: Shirly Karvinen
+
+Tuomo
+
+top3: Emilia Seppänen, Jenna Ruohola, Shirly Karvinen
+voittaja: Jenna Ruohola
+
+Tommi
+
+top3: Jenna Ruohola, Laura Mononen, Heta Sallinen
+voittaja: Heta Sallinen
+
+Tyyppiarvo
+
+top3: Shirly Karvinen, Jenna Ruohola, Heta Sallinen
+voittaja: Jenna Ruohola
+
+
+tulos:
+
+Shirly Karvinen (Miss Suomi)
+Heta Sallinen (1. perintöprinsessa)
+Emilia Seppänen (2. perintöprinsessa).
