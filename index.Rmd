@@ -4,11 +4,12 @@ author: Tuomo Nieminen
 date: "`r Sys.Date()`"
 output:
   html_document:
-    theme: cosmo
+    theme: readable
     toc: true
-    toc_float: true
+    toc_depth: 1
     fig_caption: true
     df_print: paged
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE, results = "hide"}
@@ -17,19 +18,20 @@ knitr::opts_chunk$set(echo = TRUE)
 # install.packages("IM")
 # install.packages("LiblineaR")
 ```
-<style>
-body{
-  font-size: 14pt;
-}
-</style>
+
+<br>
+*The repository of this GitHub page is [here](https://github.com/TuomoNieminen/BeautyFaces)*
+<br>
+
+# Miss finland competition
+
+This GitHub web page provides a summary of a statistical analysis related to the Miss Finland beauty contest. The page introduces methods used to predict the winners of the 2016 Miss Finland competition, using data from contestents faces, body measurements and demographic information. The analysis is based on methods of dimensionality reduction, binary classification, cross-validation and ensemble learning. 
 
 ![](top3_prediction.png)
 
+*Predictions for the 2016 Miss Finland competition. The predictions are a result of stratistical learning, where data from past competitors and competitions were used to predict future results. The percentages give the probabilities for the 2016 contestents to reach the top 3 of the competitions, based on their body measurements, eigenfaces (an approximation of their head shot) and demographic information.*
 
-*The repository of this GitHub page is [here](https://github.com/TuomoNieminen/BeautyFaces)*
-
-
-# Miss finland competition
+# tyyppiarvo.com Miss Finland Challenge
 
 Miss Finland is a beauty contest held annually in Finland. During the spring of 2016, as the head of news for the tyyppiarvo.com magazine, I presented an open challenge to forecast the winner of the competition using statistical analysis. 
 
@@ -45,7 +47,7 @@ I combined the two data set to form a competition data, which included both the 
 In this page I will introduce and explain my own solution and submission to the competition, which ended up being the winning submission.  
 
 
-# Summary of my solution
+# A summary of my solution
 
 My solution involved the following steps:
 
@@ -121,7 +123,7 @@ The data also includes the 2016 competitors for whom naturally some of the data 
 
 # Exploring and visualizing the data
 
-This analysis uses the R libraries visible below. The missR functions can be found in the [GitHub repository](https://github.com/TuomoNieminen/BeautyFaces/blob/master/missR.R) related to this page.
+This analysis uses the R libraries visible below. The helper functions used in the analysis can be found in the [GitHub repository](https://github.com/TuomoNieminen/BeautyFaces/blob/master/missR.R) related to this page. The abnalysis also uses the R packages LiblineaR, IM and dplyr.
 
 ```{r, message = F}
 library(LiblineaR)
@@ -130,7 +132,7 @@ library(IM)
 library(dplyr)
 ```
 
-The columns in the positions 19 to 4114 include the picture vectors. 
+The columns in the positions 19 to 4114 of the compettions data frame include the picture vectors. 
 
 ```{r}
 # faces
@@ -140,13 +142,13 @@ faces <- as.matrix(missdata[,19:NC, drop = F])
 
 ## Visualizing the face vectors
 
-The `drawFace()` function draws a face represented by a vector. It is a wrapper for `image()` in R. Let's look at an example face chosen by random: 
+The `drawFace()` helper function draws a face represented by a vector. It is a wrapper for `image()` in R. Let's look at an example face chosen by random: 
 
 ```{r randomface, fig.cap = "A randomly selected face from the competition data"}
 randomface <- faces[sample(1:NR,1),, drop = F]
 drawFace(randomface)
 ```
-
+<br>
 We can also visualize all of the 2016 competitors
 
 ```{r competitors2016, fig.cap = "The 2016 Miss Finland competitors"}
@@ -155,7 +157,7 @@ miss2016 <- faces[missdata$year==2016,,drop = F]
 drawMultipleFaces(miss2016)
 ```
 
-
+<br>
 We can also do fun things such as draw some average faces. It is quite straightforward to compute a simple average of the face vectors. This allows us to visualize for example an average perintoprinsessa! (placed 2-3 in the competitions).
 
 
@@ -171,7 +173,7 @@ PPs <- subset(faces, missdata$PP==1)
 meanPP <- meanface(PPs)
 drawFace(meanPP)
 ```
-
+<br>
 ## Histogram equalisation and binarizing
 
 The pictures are originally quite similar but if we're going to compare them to each other and do statistical analysis, we should make sure that the competitors are really represented as equally as possible.  
@@ -184,6 +186,7 @@ eq_faces <- apply(faces,1, IM::histeq)
 eq_faces <- t(round(eq_faces))
 drawSample(eq_faces)
 ```
+<br>
 
 We could also binarize the images by choosing a treshold and simply coding the pictures as "black" and "white". What would that look like?
 
@@ -196,6 +199,7 @@ bi_faces[co < bi_faces] <- 256
 
 drawSample(bi_faces)
 ```
+<br>
 
 That's pretty artsy. 
 
@@ -204,13 +208,15 @@ We could also take a look at some averages again. Here is the average of all the
 ```{r average_eq, fig.cap = "The average competitor after the histogram equalisation"}
 drawFace(meanface(eq_faces))
 ```
+<br>
 
-
-And here is the average binarised faces.
+And here is the average of the binarized faces.
 
 ```{r average_bi, fig.cap = "The average competitor after binarizing the images"}
 drawFace(meanface(bi_faces))
 ```
+<br>
+
 
 Right now, there are over 4000 variables related to each competitior. That is way too much for predicting. Next, we'll make an effort to reduce the dimensionality of the data.
 
@@ -225,7 +231,9 @@ The summary shows that 86 Principal components are needed to capture 99% of the 
 ```{r}
 eq_pca <- prcomp(eq_faces)
 s <- summary(eq_pca)
-data.frame(t(s$importance))
+df <- data.frame(t(s$importance))
+df$PC <- rownames(df)
+df
 ```
 
 ## Eigenfaces
@@ -245,28 +253,31 @@ new_shirly <- pc_shirly %*% t(V)
 
 drawFace(new_shirly)
 ```
-
+<br>
 
 I also wrote some helper functions to perform the above routine and compare the appearance of couple random faces with their lower dimensional representations. We saw from the summary that the first 86 Principal components are enough to capture 99% of the total variance in the data. So, let's start with that.
 
 ```{r}
 compare_faces(eq_faces, PC, which = 1:86, n = 2)
 ```
+<br>
 
-To capture about 90% of the total variance we can use the first 50 principal components.
+To capture about 90% of the total variance we can use the first 50 principal components, which would look like this:
 
 ```{r}
 compare_faces(eq_faces, PC, which = 1:50, n = 2)
 ```
+<br>
 
-
-To capture about half of the variace we could use the first 7 PC. It still looks ok.  
+To capture about half of the variace we could use the first 7 PC:  
 
 ```{r}
 compare_faces(eq_faces, PC, which = 1:7, n = 2)
 ```
+<br>
 
 In theory, using all of the principal components gives the original picture. However the prcomp function in R gives an approximate solution to the PCA problem so this is not exactly true. You can write your own function to compute a more exact solution but that is probably pretty slow (see missR.R for a function that does this) .
+
 
 Next, we'll use logistic regression together with penalization and cross-validation techniques to predict the top 3! 
 
@@ -281,7 +292,7 @@ Lastly, the regularisation can be calibrated. To finnish the model, I chose to d
 
 ## Targeting the years
 
-The goal is to predict the winners of the 2016 compotetition using data from the past competitions  
+The goal is to predict the winners of the 2016 compotetition using data from the past competitions.  
 
 ```{r}
 data <- cbind(missdata[,1:18], eq_faces)
@@ -292,9 +303,9 @@ face_dimensions <- 1:86
 ```
 
 
-I did regularized logistic regression using different values for the cost parameter. I chose a modified method were the cross-validation was performed by year: each round one competition yer was set aside as the testing group, the model fit with rest of the data and tested on the test year data. 
+To accomplish this I used l1 regularized logistic regression, using different values for the cost parameter as welel as different eigenfave representations and studied which choices yielded the best results. To select the optimal parameters I chose a cross-validation method were the cross-validation was performed by year: each round of cross-validation one competition yer was set aside as the testing group. The model was then fit with rest of the data and tested on the test year data. 
 
-I defined the cost function to be the accuracy of correctly predicting the top three competitors for each yer. I compared the best 4 pics of the model to the top 3.  
+I defined the cost function to be the accuracy of correctly predicting the top three competitors for each yer. I gave the model some slack and compared the top 4 predictions of the model to the actual top 3.  
 
 ```{r}
 
@@ -308,7 +319,9 @@ results <- cross_validate_grid(data = train_data, PC = PC,
                                C = costs, FD = face_dimensions, target = "Kolme")
 ```
 
-AFter computing the results, we can check which models were the top 20% when measured by their accuracy.  
+The helper function `cross_validate_grid()` combines the above described strategy and returns a matrix describing the accuracy achieved with each parameter combination. Using this matrix, I then selected the top 20% performing parameter combinations. 
+
+The table below shows which cost and eigenface dimensionality (facedim) were in the top 20% when measured by their accuracy in the cross-validation rounds.  
 
 ```{r}
 
@@ -321,7 +334,7 @@ data.frame(cost = chosen_costs, facedims = chosen_facedims, accuracy = results[b
 
 ## Creating an ensamble and predicting 
 
-Then, for each of the best cost + face dimension combinations, I  predicted the 2016 results using again the same l1 regularized losigtic regression. I wrote a wrapper function which uses `LiblineaR::LiblineaR` to do the predicting. The result is a probability matrix, where each row represents a competitors and the columns are predicted probabilities of getting to the top 3 of the competition
+After finding the optional cost and facedim parameters, I  predicted the 2016 results using again the same l1 regularized losigtic regression with each of the best cost and facedim combinations.  I wrote a wrapper function which uses `LiblineaR::LiblineaR` to do the predicting. The result of this function is a probability matrix, where each row represents a competitor and the columns are the predicted probabilities of getting to the top 3 of the competition, outputted by the different parameter choices.
 
 ```{r}
 prob_matrix <- fit_l1_logreg(tr_data = train_data, PC = PC, costs = chosen_costs, 
@@ -329,7 +342,8 @@ prob_matrix <- fit_l1_logreg(tr_data = train_data, PC = PC, costs = chosen_costs
                             target = "Kolme")
 ```
 
-I then averaged the predictions to get the final predictions  
+Finally I averaged the predictions gien by the different logistic regression models to get the final predictions.  
+
 ```{r}
 top3prob <- rowMeans(prob_matrix)
 names(top3prob) <- target_data$name
@@ -337,7 +351,7 @@ P <- data.frame(top3prob)
 P[order(-P),, drop = F]
 ```
 
-## plotting the predictions
+## Plotting the predictions
 
 We can also now plot the competitions and their top3 percentages:  
 
