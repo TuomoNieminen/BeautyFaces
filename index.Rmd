@@ -17,6 +17,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # install.packages("IM")
 # install.packages("LiblineaR")
+options(scipen = 10)
+set.seed(333)
 ```
 
 <br>
@@ -304,9 +306,9 @@ face_dimensions <- 1:86
 ```
 
 
-To accomplish this I used l1 regularized logistic regression, using different values for the cost parameter as welel as different eigenfave representations and studied which choices yielded the best results. To select the optimal parameters I chose a cross-validation method were the cross-validation was performed by year: each round of cross-validation one competition yer was set aside as the testing group. The model was then fit with rest of the data and tested on the test year data. 
+To accomplish this I used l1 regularized logistic regression, using different values for the cost parameter as well as different eigenface representations to make predictions, and then studied which choices yielded the best results. To select the optimal parameters, I chose a cross-validation method were the cross-validation was performed by year: each round of cross-validation a single competition year was set aside as the testing group. The model was then fit with rest of the data and tested on the test year data. 
 
-I defined the cost function to be the accuracy of correctly predicting the top three competitors for each yer. I gave the model some slack and compared the top 4 predictions of the model to the actual top 3.  
+I defined the gain function to be the accuracy of correctly predicting the top three competitors for each year. I gave the model some slack and compared the top 4 predictions of the model to the actual top 3.  
 
 ```{r}
 
@@ -322,7 +324,7 @@ results <- cross_validate_grid(data = train_data, PC = PC,
 
 The helper function `cross_validate_grid()` combines the above described strategy and returns a matrix describing the accuracy achieved with each parameter combination. Using this matrix, I then selected the top 20% performing parameter combinations. 
 
-The table below shows which cost and eigenface dimensionality (facedim) were in the top 20% when measured by their accuracy in the cross-validation rounds.  
+The table below shows which cost and eigenface dimensionality (facedim) were in the top 20% performing models, when measured by their accuracy in the cross-validation rounds.  
 
 ```{r}
 
@@ -335,18 +337,36 @@ data.frame(cost = chosen_costs, facedims = chosen_facedims, accuracy = results[b
 
 ## Creating an ensamble and predicting 
 
-After finding the optional cost and facedim parameters, I  predicted the 2016 results using again the same l1 regularized losigtic regression with each of the best cost and facedim combinations.  I wrote a wrapper function which uses `LiblineaR::LiblineaR` to do the predicting. The result of this function is a probability matrix, where each row represents a competitor and the columns are the predicted probabilities of getting to the top 3 of the competition, outputted by the different parameter choices.
+After finding the optional cost and facedim parameters, I  predicted the 2016 results using again the same l1 regularized losigtic regression technique with each of the best cost and facedim combinations separately. The hard lifting is done by the  `LiblineaR::LiblineaR` function which I wrote a wrapped for. The result of the wrapper is list with two components: a matrix of weights and a matrix of probabilities. 
 
 ```{r}
-prob_matrix <- fit_l1_logreg(tr_data = train_data, PC = PC, costs = chosen_costs, 
+res <- fit_l1_logreg(tr_data = train_data, PC = PC, costs = chosen_costs, 
                             facedims = chosen_facedims, target_data = target_data,
                             target = "Kolme")
 ```
 
-Finally I averaged the predictions gien by the different logistic regression models to get the final predictions.  
+## The weights of the features
+
+The basix goal in regression analysis is to find weights to describe the relationship between the explanatory features (variables) and the target feature. The following table shows the distribution of weights for each feature in the data, learned using l1 reguralized logistic regression. 
+
 
 ```{r}
-top3prob <- rowMeans(prob_matrix)
+sdf <- do.call(cbind, lapply(data.frame(res$weights), summary)) %>% t %>% data.frame
+sdf$feature <- rownames(sdf)
+sdf
+```
+
+The negative value of the AsuinP feature tells us that the winners are most often from the southern part of Finland compared to the middle or northern parts. However we can also see that the ones who get to the top3 are not usually from Helsinki and you might be better off if you instead hail from Turku.  All of the 'curviness' features vyotaro (waist), rinta ( chest), lantio (hips) as well as pituus (height) have on average small positive weights associated to them. So all things equal you want to be a little curvy and a bit taller than the competition.  
+
+## Making predictions
+
+Using the computed weights, I then made predictions to get a matrix of probabilities, describing the competitor's changes of reaching the top 3. In the probability matrix, each row represents a competitor and each column is a single predicted probability of getting to the top 3 of the competition, outputted by one of the logistic regression models.
+
+To get the final predictions, I averaged the rows of the probability matrix to get a single probability value for each competitor.
+
+
+```{r}
+top3prob <- rowMeans(res$probs)
 names(top3prob) <- target_data$name
 P <- data.frame(top3prob)
 P[order(-P),, drop = F]
@@ -361,7 +381,7 @@ We can also now plot the competitions and their top3 percentages:
 
 pred_labels <- paste0(target_data$name," ", 100*round(top3prob,2),"%")
 faces2016 <- target_data[,19:ncol(target_data)]
-drawMultipleFaces(faces2016, titles = pred_labels, cex = 1.3)
+drawMultipleFaces(faces2016, titles = pred_labels, cex = 1.2)
 
 ```
 
