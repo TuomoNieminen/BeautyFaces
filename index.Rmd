@@ -8,6 +8,8 @@ output:
     toc: true
     toc_depth: 1
     fig_caption: true
+    fig_width: 5
+    fig_height: 5
     df_print: paged
     code_folding: hide
 ---
@@ -44,7 +46,7 @@ Earlier during the spring, the whole editorial staff and other volunteers involv
 - **Mika Sutela**, a researcher at the University of Eastern Finland, who had access to a dataset of measurements and demograpchic information of past competitors.
 - Everyone who helped collect the data
 
-I combined the two data sets to form the competition data, which included the demographic information, body measurements, past competition results, as well as numbers representing greyscale pictures of the competitors faces. The data also included information on the competitors of the not yet held Mis Finland 2016.
+I combined the pictures with the data provided by Sutela to form the competition data, which then included the demographic information, body measurements, past competition results, as well as numeric vectors representing greyscale pictures of the competitors faces. The data also included information on the competitors of the Miss Finland 2016 (not yet held at the time). For the 2016, results were of course missing.
 
 In this page I will introduce and explain my own solution and submission to the competition, which ended up being the winning submission.  
 
@@ -153,7 +155,7 @@ drawFace(randomface)
 <br>
 We can also visualize all of the 2016 competitors
 
-```{r competitors2016, fig.cap = "The 2016 Miss Finland competitors"}
+```{r competitors2016, fig.width = 9, fig.height = 9, fig.cap = "The 2016 Miss Finland competitors"}
 # visualize the 2016 competitors
 miss2016 <- faces[missdata$year==2016,,drop = F]
 drawMultipleFaces(miss2016)
@@ -163,17 +165,11 @@ drawMultipleFaces(miss2016)
 We can also do fun things such as draw some average faces. It is quite straightforward to compute a simple average of the face vectors. This allows us to visualize for example an average perintoprinsessa! (placed 2-3 in the competitions).
 
 
-```{r}
-meanface <- function(face_matrix) {
-  colSums(face_matrix) / nrow(face_matrix)
-}
-```
 
-```{r average_perinto, fig.cap = "A visualisation of the average 2-3 place finisher in Miss Finland compatition"}
+```{r average_perinto, fig.cap = "A visualisation of the average 2-3 place finisher in Miss Finland competition"}
 # visualize the average perintoprinsessa (places 2-3)
 PPs <- subset(faces, missdata$PP==1)
-meanPP <- meanface(PPs)
-drawFace(meanPP)
+colMeans(PPs) %>% drawFace
 ```
 <br>
 
@@ -183,7 +179,7 @@ The pictures are originally quite similar but if we're going to compare them to 
 
 One of the things to concider is the lighting of the pictures. We can perform histogram equalisation to make an effort to nullify the effect of lighting.  
 
-```{r histeq, fig.cap = "A sample of faces after histogram equalisation"}
+```{r histeq, fig.width = 9, fig.height = 9, fig.cap = "A sample of faces after histogram equalisation"}
 # perform histogram equalisation to all images
 eq_faces <- apply(faces,1, IM::histeq)
 eq_faces <- t(round(eq_faces))
@@ -193,7 +189,7 @@ drawSample(eq_faces)
 
 We could also binarize the images by choosing a treshold and simply coding the pictures as "black" and "white". What would that look like?
 
-```{r, binarize, fig.cap = "A sample of binarized Miss Finland competitor faces"}
+```{r, binarize, fig.width = 9, fig.height = 9, fig.cap = "A sample of binarized Miss Finland competitor faces"}
 #  furthed simplify pics by "binarizing" 
 co <- 130
 bi_faces <- eq_faces
@@ -204,19 +200,17 @@ drawSample(bi_faces)
 ```
 <br>
 
-That's pretty artsy. 
-
-We could also take a look at some averages again. Here is the average of all the histogram equalised faces.
+That's pretty artsy. We could also take a look at some averages again. Here is the average of all the histogram equalised faces.
 
 ```{r average_eq, fig.cap = "The average competitor after the histogram equalisation"}
-drawFace(meanface(eq_faces))
+colMeans(eq_faces) %>% drawFace
 ```
 <br>
 
 And here is the average of the binarized faces.
 
 ```{r average_bi, fig.cap = "The average competitor after binarizing the images"}
-drawFace(meanface(bi_faces))
+colMeans(bi_faces) %>% drawFace
 ```
 <br>
 
@@ -260,21 +254,21 @@ drawFace(new_shirly)
 
 I also wrote some helper functions to perform the above routine and compare the appearance of couple random faces with their lower dimensional representations. We saw from the summary that the first 86 Principal components are enough to capture 99% of the total variance in the data. So, let's start with that.
 
-```{r, fig.cap = "Comparison of two original pictures and eigenface representations using the first 86 principal components"}
+```{r, fig.width = 8, fig.height = 8, fig.cap = "Comparison of two original pictures and eigenface representations using the first 86 principal components"}
 compare_faces(eq_faces, PC, which = 1:86, n = 2)
 ```
 <br>
 
 To capture about 90% of the total variance we can use the first 50 principal components, which would look like this:
 
-```{r, fig.cap = "Comparison of two original pictures and eigenface representations using the first 50 principal components"}
+```{r, fig.width = 8, fig.height = 8, fig.cap = "Comparison of two original pictures and eigenface representations using the first 50 principal components"}
 compare_faces(eq_faces, PC, which = 1:50, n = 2)
 ```
 <br>
 
 To capture about half of the variace we could use the first 7 PC:  
 
-```{r, fig.cap = "Comparison of two original pictures and eigenface representations using the first 7 principal components"}
+```{r, fig.width = 8, fig.height = 8, fig.cap = "Comparison of two original pictures and eigenface representations using the first 7 principal components"}
 compare_faces(eq_faces, PC, which = 1:7, n = 2)
 ```
 <br>
@@ -377,7 +371,7 @@ P[order(-P),, drop = F]
 We can also now plot the competitions and their top3 percentages:  
 
 
-```{r}
+```{r faces2016_predictions, fig.width = 9, fig.height = 9, fig.cap = "Predictions for the 2016 Miss Finland competition. The percentages give the probabilities of reaching the top 3. The statistical model predicts Shirly Karvinen and Emilia Seppänen as the favourites."}
 
 pred_labels <- paste0(target_data$name," ", 100*round(top3prob,2),"%")
 faces2016 <- target_data[,19:ncol(target_data)]
