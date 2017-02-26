@@ -91,7 +91,7 @@ cross_validate_grid <- function(data, PC, C, FD, target="Kolme") {
     res <- sapply(FD, function(fd) {
       cross_validate(data=data, PC = PC,cost = c, facedim = fd,type = 6, target = target)
     })
-    cat(100*which(C==c)/length(C),"% done \n")
+    # cat(100*which(C==c)/length(C),"% done \n")
     res
   })
   results
