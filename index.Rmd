@@ -174,6 +174,7 @@ meanPP <- meanface(PPs)
 drawFace(meanPP)
 ```
 <br>
+
 ## Histogram equalisation and binarizing
 
 The pictures are originally quite similar but if we're going to compare them to each other and do statistical analysis, we should make sure that the competitors are really represented as equally as possible.  
@@ -242,7 +243,7 @@ When we have the principal components solution, we can use it as a projection to
 
 Let's draw for example a PCA representation of Shirly Karvinen using the 50 first principal components.
 
-```{r}
+```{r, fig.cap = "Shirly Karvinen eigenface representation using 50 principal components"}
 PC <- eq_pca$rotation
 shirly <- faces["shirly karvinen (2016)",]
 which <- 1:50
@@ -257,21 +258,21 @@ drawFace(new_shirly)
 
 I also wrote some helper functions to perform the above routine and compare the appearance of couple random faces with their lower dimensional representations. We saw from the summary that the first 86 Principal components are enough to capture 99% of the total variance in the data. So, let's start with that.
 
-```{r}
+```{r, fig.cap = "Comparison of two original pictures and eigenface representations using the first 86 principal components"}
 compare_faces(eq_faces, PC, which = 1:86, n = 2)
 ```
 <br>
 
 To capture about 90% of the total variance we can use the first 50 principal components, which would look like this:
 
-```{r}
+```{r, fig.cap = "Comparison of two original pictures and eigenface representations using the first 50 principal components"}
 compare_faces(eq_faces, PC, which = 1:50, n = 2)
 ```
 <br>
 
 To capture about half of the variace we could use the first 7 PC:  
 
-```{r}
+```{r, fig.cap = "Comparison of two original pictures and eigenface representations using the first 7 principal components"}
 compare_faces(eq_faces, PC, which = 1:7, n = 2)
 ```
 <br>
@@ -360,17 +361,18 @@ We can also now plot the competitions and their top3 percentages:
 
 pred_labels <- paste0(target_data$name," ", 100*round(top3prob,2),"%")
 faces2016 <- target_data[,19:ncol(target_data)]
-drawMultipleFaces(faces2016, titles = pred_labels, cex = 1.4)
+drawMultipleFaces(faces2016, titles = pred_labels, cex = 1.3)
 
 ```
 
-```{r, include = F, eval = F}
+```{r, include = F}
 dev <- function() png(file="top3_prediction.png", height = 900, width = 900)
 drawMultipleFaces(faces2016, titles = pred_labels, dev=dev, cex = 1.4)
 dev.off()
 ```
 
-## Results  
+# Results  
 
-2 of those preditions turned out to be correct. Shirly Karvinen won the competition and Emilia Seppänen was in the top 3. The actual top3 also had Heta Sallinen in second place.  
+2 of the predictions of my model turned out to be correct. Shirly Karvinen won the competition and Emilia Seppänen was in the top 3. The actual top3 also had Heta Sallinen in second place.  
 
+<hr>
