@@ -1,52 +1,9 @@
 # Helper functions for the face analysis of Miss Finland Beauty competition
 # Tuomo Nieminen 2016
 
-# Allows the estimation of predictive linear models for classification and regression, 
-# such as L1- or L2-regularized logistic regression
-library(LiblineaR)
 
-
-# center faces
-center_faces <- function(faces) {
-  faces - meanface(faces)
-}
-
-
-# do pca on faces (TODO: could just use prcomp() instead ... done in index.Rmd)
-faces.PCA <- function(faces) {
-  centered_faces = center_faces(faces)
-  covariance <- cov(centered_faces)
-  eigen(covariance, symmetric=T)
-}
-
-project_face <- function(face, PC, which = 1:2) {
-  V <- PC[,which]
-  P <- V%*%t(V)
-  t(P%*%face)
-}
-
-get_randomface <- function(faces, size=nrow(faces)) {
-  i <- sample(1:nrow(faces), size = size, replace = F)
-  faces[i,, drop = F]
-}
-
-# draws both projected and original face
-compare_faces <- function(faces, PC, which = 1, n = 1) {
-  faces <- get_randomface(faces, size = n)
-  projected_faces <- t(apply(faces, 1, project_face, PC = PC, which = which))
-  both_faces <- matrix(NA, ncol = ncol(faces), nrow = n*2)
-  both_faces[((0:(n-1))*2) + 1,] <- faces
-  both_faces[((0:(n-1))*2) + 2,] <- projected_faces
-  rownames(both_faces) <- sapply(rownames(faces), rep, times = 2)
-  drawMultipleFaces(both_faces)
-}
-
-# draw a sample of faces
-drawSample<-function(faces, n=16, dev = NULL) {
-  I <- sample(1:nrow(faces),size=n,replace=F)
-  todraw <- faces[I,, drop = F]
-  drawMultipleFaces(todraw, dev = dev)
-}
+# Image visualisation
+# ------------------
 
 # draw a face
 drawFace <- function(face, newdev=F, main = rownames(face)) {
@@ -83,6 +40,57 @@ drawMultipleFaces <- function(faces, dev = NULL, titles = rownames(faces), cex =
   par(temp_par)
 }
 
+# return n random faces
+get_randomface <- function(faces, size=nrow(faces)) {
+  i <- sample(1:nrow(faces), size = size, replace = F)
+  faces[i,, drop = F]
+}
+
+# draw a sample of faces
+drawSample<-function(faces, n=16, dev = NULL) {
+  todraw <- get_randomface(faces, size =n)
+  drawMultipleFaces(todraw, dev = dev)
+}
+
+
+
+# PCA
+# ----------
+
+
+# do pca on faces (TODO: could just use prcomp() instead ... done in index.Rmd)
+faces.PCA <- function(faces) {
+  centered_faces = center_faces(faces)
+  covariance <- cov(centered_faces)
+  eigen(covariance, symmetric=T)
+}
+
+# PCA representation of a face
+project_face <- function(face, PC, which = 1:2) {
+  V <- PC[,which]
+  P <- V%*%t(V)
+  t(P%*%face)
+}
+
+# draws n projected and original faces
+compare_faces <- function(faces, PC, which = 1, n = 1) {
+  faces <- get_randomface(faces, size = n)
+  projected_faces <- t(apply(faces, 1, project_face, PC = PC, which = which))
+  both_faces <- matrix(NA, ncol = ncol(faces), nrow = n*2)
+  both_faces[((0:(n-1))*2) + 1,] <- faces
+  both_faces[((0:(n-1))*2) + 2,] <- projected_faces
+  rownames(both_faces) <- sapply(rownames(faces), rep, times = 2)
+  drawMultipleFaces(both_faces)
+}
+
+
+
+# Predicting and cross-validation
+# ------------------------------
+
+# Allows the estimation of predictive linear models for classification and regression, 
+# such as L1- or L2-regularized logistic regression
+library(LiblineaR)
 
 # test different logistic regression models 
 # on a grid of regularization costs and dimensions of eigenfaces
@@ -130,7 +138,7 @@ cross_validate <- function(data, PC, cost, facedim, type=6, target="Kolme") {
     p7 <- cbind(p7,1:nrow(X_te))
     p7 <- p7[order(p7[,1]),]
     
-    # + 1 to make the predictions a little easier...
+    # + 1 to make the predictions a little easier... this is a weird measure of accuracy, could be changed.
     c(correct=sum(p7[,2][1:(nwinners+1)] %in% winners)/length(winners))
   })
   prc_correct <- sum(pred)/length(years)
